@@ -61,6 +61,8 @@ for (k in 1:25) mu[k] = sum(A[2:5,k]-M[2:5,k])/4
 for (k in 26:50) mu[k] = sum(A[1:4,k]-M[1:4,k])/4
 hats = rep(mu-mean(mu),5)
 
+plot.ts(ts(hats), xlab="",main='Seasonality Estimate: q=25' )
+
 deseasonalized <- aal_low - hats
 deseasonalized_ts <- ts(deseasonalized)
 plot.ts(deseasonalized, xlab="",main='Deseasonalized Data: q=25' )
@@ -163,3 +165,8 @@ plot.ts(final_residuals_ar2, main='Final Residuals with AR(2) Process Removed: q
 acf(final_residuals_ar2, lag=250, main='ACF of Final Residuals from AR(2): q=25')
 pacf(final_residuals_ar2, lag=250, main='PACF of Final Residuals from AR(2): q=25')
 
+
+
+
+
+#Forecasting using the AR(2) process
