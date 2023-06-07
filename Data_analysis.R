@@ -1,9 +1,6 @@
 setwd('/Users/aravindkotikelapudi/Desktop/School_Work/Spring_2023/STA_137/Project')
 setwd('STA-137-Final-Project')
-#We are installing and/or loading the necessary graphing packages
-install.packages('ggplot2')
-library(ggplot2)
-library(gridExtra)
+
 
 aal_table <- read.csv('AAL.csv')
 t <- 1:nrow(aal_table)
@@ -12,7 +9,7 @@ aal <- ts(aal_low)
 
 #Plotting the time series
 t <- 1:nrow(aal_table)
-plot.ts(aal, xlab="Time since 2018",main='Low' )
+plot.ts(aal, main='Low' )
 
 
 
@@ -21,18 +18,14 @@ plot.ts(aal, xlab="Time since 2018",main='Low' )
 
 #Smooth components: Trend
 
-#Moving average filter
+#Moving average filter-trying out different filters
 ma2 = filter(aal, sides=2, rep(1,5)/5)
 ma10 = filter(aal, sides=2, rep(1,21)/21)
 ma35 = filter(aal, sides=2, rep(1,71)/71)
 plot(t, ma2, xlab="", ylab="",type="l", col='blue', main='Moving Average Filter')
 lines(t,ma10, col='red'); lines(t,ma35, col='green')
-#legend(1, 95, legend=c("Filter size: 2", "Filter size: 10", "Filter size: 35"),
-       #col=c("blue", "red", "green"), lty=1:2, cex=0.8)
-
 trend_moving_average = ma10[c(3:249)]
-
-plot.ts(aal[c(3:249)]-trend_moving_average, xlab="Time since 2018",main='Low: Trend Removed for ma10' )
+plot.ts(aal[c(3:249)]-trend_moving_average, main='Low' )
 
 #Difference operator method
 d1 = diff(aal)
@@ -41,8 +34,6 @@ par(mfrow=c(1,2))
 plot.ts(d1, xlab="", ylab="")
 plot.ts(d2, xlab="", ylab="")
 
-mean(d1)
-mean(d2)
 
 
 
@@ -169,4 +160,52 @@ pacf(final_residuals_ar2, lag=250, main='PACF of Final Residuals from AR(2): q=2
 
 
 
-#Forecasting using the AR(2) process
+
+#Forecasting
+
+#Trend component
+#Will fit a 3rd order polynomial to ma25 trend estimation:
+t = 1:length(ma25)
+t2 <- t^2
+t3 <- t^3
+
+thirdfit = lm(ma25 ~ (t + t2 + t3))
+plot.ts(ma25, main="Ma25 trend estimate vs 3rd-order Fit")
+lines(t, (1.735*10) - (1.233*10^(-1))*t + (1.09*10^(-3))*t^2 - (2.69*10^(-6))*t^3, col='blue')
+thirdfit$coefficients
+
+intercept <- 1.735*10
+a1 <- -1.233*10^(-1)
+a2 <- 1.09*10^(-3)
+a3 <- -2.69*10^(-6)
+
+cubic = function(a,b,c,d,x){
+  a*x^3 + b*x^2 + c*x + d
+}
+
+t_forecast = 200:260
+
+#Trend forecast
+trend_forecast <- cubic(a3, a2, a1, intercept, t_forecast)
+trend_forecast
+
+#Seasonality forecast
+#Clear section of seasonality that has same behavior as if starting at 200
+seasonality_forecast <-hats[50:110] 
+
+#Rough component forecast
+#AR(1) process
+rough_forecast_ar1 <-as.numeric((predict(fit.aal_1, n.ahead=61)$pred))
+
+#AR(2) process
+rough_forecast_ar2 <-as.numeric((predict(fit.aal_2, n.ahead=61)$pred))
+
+#AR(1) total forecast
+forecast_ar1 <- trend_forecast + seasonality_forecast + rough_forecast_ar1
+forecast_ar1 <- ts(forecast_ar1, start = 200)
+plot.ts(forecast_ar1, main = 'Forecast estimate for AR(1) process past 200: q=25')
+
+#AR(2) total forecast
+forecast_ar2 <- trend_forecast + seasonality_forecast + rough_forecast_ar2
+forecast_ar2 <- ts(forecast_ar2, start = 200)
+plot.ts(forecast_ar2, main = 'Forecast estimate for AR(2) process past 200: q=25')
